@@ -4,7 +4,6 @@ go 1.23.2
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/Rhymen/go-whatsapp v0.1.1 // indirect
 	github.com/bytedance/sonic v1.12.4 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect

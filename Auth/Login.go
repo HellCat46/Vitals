@@ -42,8 +42,8 @@ func DonatorLogin(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	var user Db.Donator
-	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM donator WHERE email = '%s';", loginData.Email))
+	var user Db.User
+	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM user WHERE email = '%s';", loginData.Email))
 	if rows == nil {
 		ctx.JSON(404, map[string]string{
 			"error": "User does not exist",
@@ -125,8 +125,8 @@ func HospitalLogin(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	var user Db.Hospital
-	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM hospital WHERE email = '%s';", loginData.Email))
+	var user Db.User
+	rows, err := db.Queryx(fmt.Sprintf("SELECT * FROM user WHERE email = '%s';", loginData.Email))
 	if rows == nil {
 		ctx.JSON(404, map[string]string{
 			"error": "User does not exist",

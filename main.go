@@ -41,7 +41,7 @@ func main() {
 	})
 
 	r.POST("/donator/login", func(ctx *gin.Context) {
-		Auth.DonatorReg(ctx, db)
+		Auth.DonatorLogin(ctx, db)
 	})
 	r.POST("/hospital/login", func(ctx *gin.Context) {
 		Auth.HospitalLogin(ctx, db)

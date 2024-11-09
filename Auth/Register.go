@@ -31,7 +31,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 
 	var count int
 
-	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(id) FROM Donator WHERE email = \"%s\"", reqBody.Email)).Scan(&count)
+	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(id) FROM user WHERE email = \"%s\"", reqBody.Email)).Scan(&count)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -56,13 +56,22 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err := db.NamedExec("INSERT INTO Donator(name, bloodgroup, email, password, address, phoneno) VALUES(:name, :bloodgroup, :email, :password, :address, :phoneno)",
-		map[string]interface{}{"name": reqBody.Name, "bloodgroup": reqBody.BloodGroup, "email": reqBody.Email, "password": string(hashes), "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+	tx, err := db.Begin()
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
-			"error": "Unable to create an Account.",
+			"error": "Unable to start a transaction",
 		})
+		return
+	}
+
+	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(:email, :password, :type);", map[string]interface{}{"email": reqBody.Email, "password": string(hashes), "type": 1})
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to process the request",
+		})
+		tx.Rollback()
 		return
 	}
 
@@ -70,10 +79,24 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
-			"error": "Account Successfully Created but Something went wrong while registering you in.",
+			"error": "Unable to process the request",
 		})
+		tx.Rollback()
 		return
 	}
+
+	res, err = tx.Exec("INSERT INTO Donator(userId, name, bloodgroup, address, phoneno) VALUES(:userId, :name, :bloodgroup, :address, :phoneno)",
+		map[string]interface{}{"userId": userId, "name": reqBody.Name, "bloodgroup": reqBody.BloodGroup, "email": reqBody.Email, "password": string(hashes), "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to create an Account.",
+		})
+		tx.Rollback()
+		return
+	}
+
+
 
 	var data []byte
 	file, err := reqBody.Image.Open()
@@ -82,6 +105,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		ctx.JSON(500, map[string]string{
 			"error": "Unable to process the ID Proof",
 		})
+		tx.Rollback()
 		return
 
 	}
@@ -91,6 +115,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		ctx.JSON(500, map[string]string{
 			"error": "Unable to process the ID Proof",
 		})
+		tx.Rollback()
 		return
 	}
 
@@ -99,8 +124,20 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		ctx.JSON(500, map[string]string{
 			"error": "Unable to save the ID Proof",
 		})
+		tx.Rollback()
 		return
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to commit the transaction",
+		})
+		tx.Rollback()
+		return
+	}
+
 
 	token, err := GenerateToken(userId)
 	if err != nil {
@@ -134,7 +171,7 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 	}
 
 	var count int
-	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(id) FROM Donator WHERE email = \"%s\"", reqBody.Email)).Scan(&count)
+	err = db.QueryRow(fmt.Sprintf("SELECT COUNT(id) FROM user WHERE email = \"%s\"", reqBody.Email)).Scan(&count)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -159,13 +196,23 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err := db.NamedExec("INSERT INTO hospital(name, email, password, address, phoneno) VALUES(:name, :email, :password, :address, :phoneno)",
-		map[string]interface{}{"name": reqBody.Name, "email": reqBody.Email, "password": string(hashes), "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+
+	tx, err := db.Begin()
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
-			"error": "Unable to create an Account.",
+			"error": "Unable to start a transaction",
 		})
+		return
+	}
+
+	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(:email, :password, :type);", map[string]interface{}{"email": reqBody.Email, "password": string(hashes), "type": 0})
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to process the request",
+		})
+		tx.Rollback()
 		return
 	}
 
@@ -173,7 +220,19 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
-			"error": "Account Successfully Created but Something went wrong while registering you in.",
+			"error": "Unable to process the request",
+		})
+		tx.Rollback()
+		return
+	}
+
+
+	res, err = db.NamedExec("INSERT INTO hospital(userId,name, address, phoneno) VALUES(:userId, :name, :address, :phoneno)",
+		map[string]interface{}{"userId": userId, "name": reqBody.Name, "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to create an Account.",
 		})
 		return
 	}
