@@ -65,8 +65,7 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		if err != nil {
 			println(err.Error())
 			ctx.JSON(500, gin.H{
-				"" +
-					"error": "Unable to fetch hospital data",
+				"error": "Unable to fetch hospital data",
 			})
 			return
 		}
@@ -124,7 +123,9 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 				if err != nil {
 					println(err.Error())
 				} else {
-					ctx.Status(200)
+					ctx.JSON(200, map[string]string{
+						"status": "Success",
+					})
 					return
 				}
 			}
@@ -170,19 +171,69 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		}
 	}
 
-	ctx.Status(200)
+	ctx.JSON(200, map[string]string{
+		"status": "Success",
+	})
 }
 
-func GetRequests(ctx *gin.Context, db *sqlx.DB) {
+func HospitalGetRequests(ctx *gin.Context, db *sqlx.DB) {
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
-		ctx.JSON(401, gin.H{})
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	println(userId)
+	req, err := db.Queryx(fmt.Sprintf("SELECT * FROM requests WHERE hospitalId = %s;", userId))
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to fetch blood requests",
+		})
+		return
+	}
+
+	var requests []Db.Request
+	for req.Next() {
+		var request Db.Request
+		err := req.StructScan(&request)
+		if err != nil {
+			println(err.Error())
+			continue
+		}
+
+		requests = append(requests, request)
+	}
+
+	ctx.JSON(200, gin.H{
+		"requests": requests,
+	})
+}
+
+func DeleteRequest(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
 	}
 }
 
 func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
-		ctx.JSON(401, gin.H{})
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
 	}
 }

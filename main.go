@@ -63,6 +63,10 @@ func main() {
 		Requests.CreateRequest(ctx, db)
 	})
 
+	r.GET("hospital/requests", func(ctx *gin.Context) {
+		Requests.HospitalGetRequests(ctx, db)
+	})
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH"},
