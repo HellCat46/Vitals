@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"io"
+	"strconv"
 )
 
 type CreateReqBody struct {
@@ -277,7 +278,7 @@ func DonatorAllGetRequests(ctx *gin.Context, db *sqlx.DB) {
 	}
 
 	println(userId)
-	req, err := db.Queryx(fmt.Sprintf("SELECT * FROM requests WHERE acceptedBy != %s;", userId))
+	req, err := db.Queryx("SELECT * FROM requests WHERE acceptedBy IS NULL;")
 	if err != nil {
 		ctx.JSON(500, gin.H{
 			"error": "Unable to fetch blood requests",
@@ -302,7 +303,15 @@ func DonatorAllGetRequests(ctx *gin.Context, db *sqlx.DB) {
 	})
 }
 
-func DeleteRequest(ctx *gin.Context, db *sqlx.DB) {
+func HospitalDeleteRequest(ctx *gin.Context, db *sqlx.DB) {
+	reqId, err := strconv.Atoi(ctx.Query("id"))
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"error": "Not a valid Id Query",
+		})
+		return
+	}
+
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
 		ctx.JSON(401, gin.H{
@@ -310,9 +319,59 @@ func DeleteRequest(ctx *gin.Context, db *sqlx.DB) {
 		})
 		return
 	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	_, err = db.NamedExec("DELETE FROM requests WHERE hospitalId = :hospitalId && id = :reqId;", map[string]interface{}{"hospitalId": userId, "reqId": reqId})
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to delete hospital requests",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"status": "success",
+	})
+}
+
+func DonatorDeleteRequest(ctx *gin.Context, db *sqlx.DB) {
+	reqId, err := strconv.Atoi(ctx.Query("id"))
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	_, err = db.NamedExec("UPDATE requests SET acceptedBy = NULL  WHERE id = :id && acceptedBy = :userId;", map[string]interface{}{"id": reqId, "userId": userId})
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to delete hospital requests",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"status": "success",
+	})
 }
 
 func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
+	reqId, err := strconv.Atoi(ctx.Query("id"))
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
 		ctx.JSON(401, gin.H{
@@ -320,4 +379,55 @@ func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
 		})
 		return
 	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+	tx := db.MustBegin()
+
+	var reqType int
+	err = tx.QueryRow(fmt.Sprintf("SELECT type FROM requests WHERE id = %s", reqId)).Scan(&reqType)
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to fetch requests data",
+		})
+		return
+	}
+	_, err = tx.Exec("UPDATE requests SET acceptedBy = ?  WHERE id = ? && acceptedBy is NULL;", userId, reqId)
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to update hospital requests",
+		})
+		tx.Rollback()
+		return
+	}
+
+	if reqType == 0 {
+		_, err = tx.Exec("UPDATE donator SET credits = credits + 10 WHERE userId = ?", userId)
+	} else {
+		_, err = tx.Exec("UPDATE donator SET credits = credits + 10 WHERE userId = ?", userId)
+	}
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to update hospital requests",
+		})
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to update hospital requests",
+		})
+		tx.Rollback()
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"status": "success",
+	})
 }

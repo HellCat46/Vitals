@@ -75,6 +75,18 @@ func main() {
 		Requests.DonatorAcceptedGetRequests(ctx, db)
 	})
 
+	r.GET("/hospital/deleteRequest", func(ctx *gin.Context) {
+		Requests.HospitalDeleteRequest(ctx, db)
+	})
+
+	r.GET("/donator/deleteRequest", func(ctx *gin.Context) {
+		Requests.DonatorDeleteRequest(ctx, db)
+	})
+
+	r.GET("/donator/acceptRequest", func(ctx *gin.Context) {
+		Requests.AcceptRequest(ctx, db)
+	})
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH"},
