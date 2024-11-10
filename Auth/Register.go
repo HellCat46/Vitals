@@ -65,7 +65,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(:email, :password, :type);", map[string]interface{}{"email": reqBody.Email, "password": string(hashes), "type": 1})
+	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(?, ?, ?);", reqBody.Email, string(hashes), 1)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -85,8 +85,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err = tx.Exec("INSERT INTO Donator(userId, name, bloodgroup, address, phoneno) VALUES(:userId, :name, :bloodgroup, :address, :phoneno)",
-		map[string]interface{}{"userId": userId, "name": reqBody.Name, "bloodgroup": reqBody.BloodGroup, "email": reqBody.Email, "password": string(hashes), "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+	res, err = tx.Exec("INSERT INTO Donator(userId, name, bloodgroup, address, phoneno) VALUES(?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.BloodGroup, reqBody.Address, reqBody.PhoneNo)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -95,8 +94,6 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		tx.Rollback()
 		return
 	}
-
-
 
 	var data []byte
 	file, err := reqBody.Image.Open()
@@ -119,8 +116,9 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	err = os.WriteFile(fmt.Sprintf("Data/Donar/%d.png", userId), data, 667)
+	err = os.WriteFile(fmt.Sprintf("Data/Donor/%d.png", userId), data, 667)
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(500, map[string]string{
 			"error": "Unable to save the ID Proof",
 		})
@@ -137,7 +135,6 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		tx.Rollback()
 		return
 	}
-
 
 	token, err := GenerateToken(userId)
 	if err != nil {
@@ -196,7 +193,6 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-
 	tx, err := db.Begin()
 	if err != nil {
 		println(err.Error())
@@ -206,7 +202,7 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(:email, :password, :type);", map[string]interface{}{"email": reqBody.Email, "password": string(hashes), "type": 0})
+	res, err := tx.Exec("INSERT INTO user(email, password, type) VALUES(?, ?, ?);", reqBody.Email, string(hashes), 0)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -226,9 +222,7 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-
-	res, err = db.NamedExec("INSERT INTO hospital(userId,name, address, phoneno) VALUES(:userId, :name, :address, :phoneno)",
-		map[string]interface{}{"userId": userId, "name": reqBody.Name, "address": reqBody.Address, "phoneno": reqBody.PhoneNo})
+	res, err = tx.Exec("INSERT INTO hospital(userId,name, address, phoneno) VALUES(?, ?, ?, ?)", userId, reqBody.Name, reqBody.Address, reqBody.PhoneNo)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
