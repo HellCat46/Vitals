@@ -2,8 +2,8 @@ package Db
 
 var Schemas = []string{
 	`CREATE TABLE IF NOT EXISTS User (id INT PRIMARY KEY  AUTO_INCREMENT, email VARCHAR(255), password VARCHAR(500), type tinyint, createdAt DATETIME DEFAULT CURRENT_TIMESTAMP())`,
-	`CREATE TABLE IF NOT EXISTS Donator (userId INT REFERENCES User(id), name CHAR(50), bloodgroup VARCHAR(10), address VARCHAR(200), credits INT DEFAULT 0, phoneno VARCHAR(12));`,
-	`CREATE TABLE IF NOT EXISTS Hospital (userId INT REFERENCES User(id), name CHAR(50), address VARCHAR(200), phoneno VARCHAR(12));`,
+	`CREATE TABLE IF NOT EXISTS Donator (userId INT REFERENCES User(id), name CHAR(50), bloodgroup VARCHAR(10), address VARCHAR(200), pincode VARCHAR(6), credits INT DEFAULT 0, phoneno VARCHAR(12));`,
+	`CREATE TABLE IF NOT EXISTS Hospital (userId INT REFERENCES User(id), name CHAR(50), address VARCHAR(200), pincode VARCHAR(6), phoneno VARCHAR(12));`,
 	`CREATE TABLE IF NOT EXISTS Admins (id INT PRIMARY KEY, name CHAR(50), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
 	`CREATE TABLE IF NOT EXISTS donations (id INT PRIMARY KEY, donorId INT REFERENCES donator(userId), hospitalId INT REFERENCES hospital(userId), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
 	`CREATE TABLE IF NOT EXISTS requests (id INT PRIMARY KEY, hospitalId INT REFERENCES hospital(userId), type tinyint, bloodgroup VARCHAR(10));`,
