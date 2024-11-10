@@ -4,6 +4,7 @@ import (
 	"Vitals/Auth"
 	"Vitals/Db"
 	"Vitals/Notification"
+	"Vitals/Requests"
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -59,11 +60,11 @@ func main() {
 	})
 
 	r.POST("/hospital/createRequest", func(ctx *gin.Context) {
-
+		Requests.CreateRequest(ctx, db)
 	})
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://foo.com"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH"},
 		AllowHeaders:     []string{"Origin"},
 		ExposeHeaders:    []string{"Content-Length"},

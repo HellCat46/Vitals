@@ -3,7 +3,9 @@ package Requests
 import (
 	"Vitals/Auth"
 	"Vitals/Db"
+	"Vitals/Notification"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"io"
@@ -12,6 +14,7 @@ import (
 type CreateReqBody struct {
 	BloodGroup string `json:"blood_group"`
 	NeedType   int    `json:"need_type"`
+	Unit       int    `json:"unit"`
 }
 
 func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
@@ -47,7 +50,8 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err := db.Queryx("SELECT * FROM hospital WHERE userId = :userId", userId)
+	println(userId)
+	res, err := db.Queryx(fmt.Sprintf("SELECT * FROM hospital WHERE userId = %s", userId))
 	if err != nil {
 		ctx.JSON(500, gin.H{
 			"error": "Unable to fetch hospital data",
@@ -59,6 +63,7 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 	if res.Next() {
 		err := res.StructScan(&hospitalData)
 		if err != nil {
+			println(err.Error())
 			ctx.JSON(500, gin.H{
 				"" +
 					"error": "Unable to fetch hospital data",
@@ -71,29 +76,101 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		})
 		return
 	}
-	if createReqBody.NeedType == 0 {
-		res, err := db.Queryx("SELECT name, phoneno FROM donator WHERE pincode = :pincode && bloodgroup = : bloodgroup", hospitalData.Pincode, createReqBody.BloodGroup)
-		if err != nil {
-			ctx.JSON(500, gin.H{
-				"error": "Unable to fetch donor's data",
-			})
-		}
 
-		type Donator struct {
-			Name    string `db:"name"`
-			Phoneno string `db:"phoneno"`
-		}
-		var donators []Donator
-		for res.Next() {
-			var donator Donator
-			err := res.StructScan(&donator)
-			if err != nil {
-				continue
+	_, err = db.NamedExec("INSERT INTO requests(hospitalId, type, bloodgroup, unit) VALUES(:hosId, :type, :bloodgroup, :unit)",
+		map[string]interface{}{
+			"hosId":      hospitalData.UserId,
+			"type":       createReqBody.NeedType,
+			"bloodgroup": createReqBody.BloodGroup,
+			"unit":       createReqBody.Unit,
+		})
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, gin.H{
+			"error": "Unable to create a request",
+		})
+		return
+	}
+
+	if createReqBody.NeedType == 0 {
+
+		res, err := db.Queryx("SELECT name, phoneno FROM donator WHERE pincode = :pincode && bloodgroup = : bloodgroup", hospitalData.Pincode, createReqBody.BloodGroup)
+		if err == nil {
+			type Donator struct {
+				Name    string `db:"name"`
+				Phoneno string `db:"phoneno"`
 			}
-			donators = append(donators, donator)
+			var users []Notification.User
+			for res.Next() {
+				var donator Donator
+				err := res.StructScan(&donator)
+				if err != nil {
+					continue
+				}
+				users = append(users, Notification.User{
+					Number: donator.Phoneno,
+					Name:   donator.Name,
+				})
+			}
+
+			if len(users) != 0 {
+				err := Notification.SendBulkMessage(Notification.ReqBody{
+					Users:      users,
+					Hospital:   hospitalData.Name,
+					Addr:       hospitalData.Address,
+					BloodGroup: createReqBody.BloodGroup,
+					Type:       0,
+				})
+				if err != nil {
+					println(err.Error())
+				} else {
+					ctx.Status(200)
+					return
+				}
+			}
 		}
 	}
 
+	res, err = db.Queryx(fmt.Sprintf("SELECT name, phoneno FROM donator WHERE bloodgroup = '%s'", createReqBody.BloodGroup))
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(200, gin.H{
+			"error": "Request was successfully Created but Unable to inform users.",
+		})
+		return
+	}
+	type Donator struct {
+		Name    string `db:"name"`
+		Phoneno string `db:"phoneno"`
+	}
+	var users []Notification.User
+	for res.Next() {
+		var donator Donator
+		err := res.StructScan(&donator)
+		if err != nil {
+			continue
+		}
+		users = append(users, Notification.User{
+			Number: donator.Phoneno,
+			Name:   donator.Name,
+		})
+	}
+
+	println(len(users))
+	if len(users) != 0 {
+		err := Notification.SendBulkMessage(Notification.ReqBody{
+			Users:      users,
+			Hospital:   hospitalData.Name,
+			Addr:       hospitalData.Address,
+			BloodGroup: createReqBody.BloodGroup,
+			Type:       1,
+		})
+		if err != nil {
+			println(err.Error())
+		}
+	}
+
+	ctx.Status(200)
 }
 
 func GetRequests(ctx *gin.Context, db *sqlx.DB) {
