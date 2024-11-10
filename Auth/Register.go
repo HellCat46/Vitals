@@ -85,7 +85,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err = tx.Exec("INSERT INTO Donator(userId, name, bloodgroup, address, phoneno) VALUES(?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.BloodGroup, reqBody.Address, reqBody.PhoneNo)
+	res, err = tx.Exec("INSERT INTO donator(userId, name, bloodgroup, address, phoneno) VALUES(?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.BloodGroup, reqBody.Address, reqBody.PhoneNo)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
