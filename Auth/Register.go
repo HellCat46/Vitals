@@ -260,6 +260,15 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, map[string]string{
+			"error": "Unable to commit the transaction",
+		})
+		return
+	}
+
 	token, err := GenerateToken(userId)
 	if err != nil {
 		println(err.Error())

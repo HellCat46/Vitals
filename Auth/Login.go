@@ -20,6 +20,7 @@ type LoginData struct {
 func DonatorLogin(ctx *gin.Context, db *sqlx.DB) {
 	data, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(400, gin.H{
 			"error": "Unparsable Body",
 		})
@@ -29,6 +30,7 @@ func DonatorLogin(ctx *gin.Context, db *sqlx.DB) {
 	var loginData LoginData
 	err = json.Unmarshal(data, &loginData)
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(400, gin.H{
 			"error": "Unparsable Body",
 		})
@@ -102,7 +104,9 @@ func DonatorLogin(ctx *gin.Context, db *sqlx.DB) {
 
 func HospitalLogin(ctx *gin.Context, db *sqlx.DB) {
 	data, err := io.ReadAll(ctx.Request.Body)
+	println(string(data))
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(400, gin.H{
 			"error": "Unparsable Body",
 		})
@@ -112,6 +116,7 @@ func HospitalLogin(ctx *gin.Context, db *sqlx.DB) {
 	var loginData LoginData
 	err = json.Unmarshal(data, &loginData)
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(400, gin.H{
 			"error": "Unparsable Body",
 		})

@@ -11,10 +11,18 @@ import (
 
 type CreateReqBody struct {
 	BloodGroup string `json:"blood_group"`
-	NeedType   string `json:"need_type"`
+	NeedType   int    `json:"need_type"`
 }
 
 func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+
 	data, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		ctx.JSON(400, gin.H{
@@ -27,13 +35,6 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 	if err != nil {
 		ctx.JSON(400, gin.H{
 			"error": "Unparsable request body",
-		})
-		return
-	}
-	token := ctx.Request.Header.Get("X-TOKEN")
-	if token == "" {
-		ctx.JSON(401, gin.H{
-			"error": "You need to be logged in to perform this action",
 		})
 		return
 	}
@@ -70,10 +71,29 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		})
 		return
 	}
+	if createReqBody.NeedType == 0 {
+		res, err := db.Queryx("SELECT name, phoneno FROM donator WHERE pincode = :pincode && bloodgroup = : bloodgroup", hospitalData.Pincode, createReqBody.BloodGroup)
+		if err != nil {
+			ctx.JSON(500, gin.H{
+				"error": "Unable to fetch donor's data",
+			})
+		}
 
-	//if()
-	//
-	//res, err := db.Query("SELECT name, phoneno FROM donator WHERE pincode = :pincode", hospitalData.Pincode)
+		type Donator struct {
+			Name    string `db:"name"`
+			Phoneno string `db:"phoneno"`
+		}
+		var donators []Donator
+		for res.Next() {
+			var donator Donator
+			err := res.StructScan(&donator)
+			if err != nil {
+				continue
+			}
+			donators = append(donators, donator)
+		}
+	}
+
 }
 
 func GetRequests(ctx *gin.Context, db *sqlx.DB) {
