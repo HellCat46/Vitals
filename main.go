@@ -63,8 +63,16 @@ func main() {
 		Requests.CreateRequest(ctx, db)
 	})
 
-	r.GET("hospital/requests", func(ctx *gin.Context) {
+	r.GET("/hospital/requests", func(ctx *gin.Context) {
 		Requests.HospitalGetRequests(ctx, db)
+	})
+
+	r.GET("/donator/requests", func(ctx *gin.Context) {
+		Requests.DonatorAllGetRequests(ctx, db)
+	})
+
+	r.GET("/donator/accepted_requests", func(ctx *gin.Context) {
+		Requests.DonatorAcceptedGetRequests(ctx, db)
 	})
 
 	r.Use(cors.New(cors.Config{

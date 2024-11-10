@@ -218,6 +218,90 @@ func HospitalGetRequests(ctx *gin.Context, db *sqlx.DB) {
 	})
 }
 
+func DonatorAcceptedGetRequests(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	println(userId)
+	req, err := db.Queryx(fmt.Sprintf("SELECT * FROM requests WHERE acceptedBy = %s;", userId))
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to fetch blood requests",
+		})
+		return
+	}
+
+	var requests []Db.Request
+	for req.Next() {
+		var request Db.Request
+		err := req.StructScan(&request)
+		if err != nil {
+			println(err.Error())
+			continue
+		}
+
+		requests = append(requests, request)
+	}
+
+	ctx.JSON(200, gin.H{
+		"requests": requests,
+	})
+}
+
+func DonatorAllGetRequests(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	println(userId)
+	req, err := db.Queryx(fmt.Sprintf("SELECT * FROM requests WHERE acceptedBy != %s;", userId))
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": "Unable to fetch blood requests",
+		})
+		return
+	}
+
+	var requests []Db.Request
+	for req.Next() {
+		var request Db.Request
+		err := req.StructScan(&request)
+		if err != nil {
+			println(err.Error())
+			continue
+		}
+
+		requests = append(requests, request)
+	}
+
+	ctx.JSON(200, gin.H{
+		"requests": requests,
+	})
+}
+
 func DeleteRequest(ctx *gin.Context, db *sqlx.DB) {
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
