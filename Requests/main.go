@@ -3,8 +3,10 @@ package Requests
 import (
 	"Vitals/Auth"
 	"Vitals/Db"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"io"
 )
 
 type CreateReqBody struct {
@@ -13,6 +15,21 @@ type CreateReqBody struct {
 }
 
 func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
+	data, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"error": "Unparsable request body",
+		})
+		return
+	}
+	var createReqBody CreateReqBody
+	err = json.Unmarshal(data, &createReqBody)
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"error": "Unparsable request body",
+		})
+		return
+	}
 	token := ctx.Request.Header.Get("X-TOKEN")
 	if token == "" {
 		ctx.JSON(401, gin.H{
@@ -54,11 +71,21 @@ func CreateRequest(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
+	//if()
+	//
+	//res, err := db.Query("SELECT name, phoneno FROM donator WHERE pincode = :pincode", hospitalData.Pincode)
 }
 
-type ReqBody struct {
-	Numbers    []string `json:"numbers"`
-	Hospital   string   `json:"hospital"`
-	Addr       string   `json:"addr"`
-	BloodGroup string   `json:"blood_group"`
+func GetRequests(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{})
+	}
+}
+
+func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{})
+	}
 }

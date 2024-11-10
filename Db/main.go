@@ -20,6 +20,7 @@ type Hospital struct {
 	UserId    int    `db:"userId"`
 	Name      string `db:"name"`
 	Address   string `db:"address"`
+	Pincode   string `db:"pincode"`
 	PhoneNo   string `db:"phoneno"`
 	CreatedAt string `db:"createdAt"`
 }
@@ -29,6 +30,7 @@ type Donator struct {
 	Name       string `db:"name"`
 	BloodGroup string `db:"bloodgroup"`
 	Address    string `db:"address"`
+	Pincode    string `db:"pincode"`
 	PhoneNo    string `db:"phoneno"`
 	CreatedAt  string `db:"createdAt"`
 }

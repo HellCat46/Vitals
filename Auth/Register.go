@@ -18,6 +18,7 @@ type DonatorRegBody struct {
 	Password   string                `form:"password"`
 	Address    string                `form:"address"`
 	PhoneNo    string                `form:"phoneno"`
+	Pincode    string                `form:"pincode"`
 	Image      *multipart.FileHeader `form:"image"`
 }
 
@@ -85,7 +86,7 @@ func DonatorReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err = tx.Exec("INSERT INTO donator(userId, name, bloodgroup, address, phoneno) VALUES(?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.BloodGroup, reqBody.Address, reqBody.PhoneNo)
+	res, err = tx.Exec("INSERT INTO donator(userId, name, bloodgroup, address, phoneno, pincode) VALUES(?, ?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.BloodGroup, reqBody.Address, reqBody.PhoneNo, reqBody.Pincode)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{
@@ -155,6 +156,7 @@ type HospitalRegBody struct {
 	Email       string                `form:"email"`
 	Password    string                `form:"password"`
 	Address     string                `form:"address"`
+	Pincode     string                `form:"pincode"`
 	PhoneNo     string                `form:"phoneno"`
 	Certificate *multipart.FileHeader `form:"cert"`
 }
@@ -222,7 +224,7 @@ func HospitalReg(ctx *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	res, err = tx.Exec("INSERT INTO hospital(userId,name, address, phoneno) VALUES(?, ?, ?, ?)", userId, reqBody.Name, reqBody.Address, reqBody.PhoneNo)
+	res, err = tx.Exec("INSERT INTO hospital(userId,name, address, phoneno, pincode) VALUES(?, ?, ?, ?, ?)", userId, reqBody.Name, reqBody.Address, reqBody.PhoneNo, reqBody.Pincode)
 	if err != nil {
 		println(err.Error())
 		ctx.JSON(500, map[string]string{

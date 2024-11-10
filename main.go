@@ -3,11 +3,13 @@ package main
 import (
 	"Vitals/Auth"
 	"Vitals/Db"
+	"Vitals/Notification"
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/robfig/cron/v3"
 	"os"
 	"time"
 )
@@ -32,6 +34,15 @@ func main() {
 		fmt.Printf("Successfully created table no %d.\n", idx+1)
 	}
 
+	cronManager := cron.New()
+
+	cronManager.AddFunc("*/1 * * * *", func() {
+		err := Notification.SendWarning("8302071621")
+		if err != nil {
+			print(err.Error())
+		}
+	})
+
 	r := gin.Default()
 	r.POST("/donator/register", func(ctx *gin.Context) {
 		Auth.DonatorReg(ctx, db)
@@ -47,6 +58,10 @@ func main() {
 		Auth.HospitalLogin(ctx, db)
 	})
 
+	r.POST("/hospital/createRequest", func(ctx *gin.Context) {
+
+	})
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"https://foo.com"},
 		AllowMethods:     []string{"PUT", "PATCH"},
@@ -58,7 +73,9 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
 	r.Run()
+	cronManager.Run()
 }
 
 // re_T1c6Yzeq_4qyVLVoMFxbMGNKB2rKrZqJF
