@@ -11,9 +11,11 @@ var Schemas = []string{
 }
 
 type User struct {
-	Id       int    `db:"id"`
-	Email    string `db:"email"`
-	Password string `db:"password"`
+	Id        int    `db:"id"`
+	Email     string `db:"email"`
+	Password  string `db:"password"`
+	Type      string `db:"type"`
+	CreatedAt string `db:"createdAt"`
 }
 
 type Hospital struct {
