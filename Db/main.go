@@ -9,7 +9,7 @@ var Schemas = []string{
 	`CREATE TABLE IF NOT EXISTS admins (id INT PRIMARY KEY AUTO_INCREMENT, name CHAR(50), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
 	`CREATE TABLE IF NOT EXISTS donations (id INT PRIMARY KEY AUTO_INCREMENT, donorId INT REFERENCES donator(userId), hospitalId INT REFERENCES hospital(userId), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
 	`CREATE TABLE IF NOT EXISTS requests (id INT PRIMARY KEY AUTO_INCREMENT, hospitalId INT REFERENCES hospital(userId), type tinyint, bloodgroup VARCHAR(10), unit int, acceptedBy INT REFERENCES donator(userId));`,
-	`CREATE TABLE IF NOT EXISTS blacklist (donatorId INT REFERENCES donator(userId), hospitalId INT REFERENCES Hospital(userId), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
+	// `CREATE TABLE IF NOT EXISTS blacklist (donatorId INT REFERENCES donator(userId), hospitalId INT REFERENCES Hospital(userId), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP());`,
 }
 
 type Request struct {

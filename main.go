@@ -6,13 +6,15 @@ import (
 	"Vitals/Notification"
 	"Vitals/Requests"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
-	"os"
-	"time"
 )
 
 func main() {
@@ -25,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	db, err := sqlx.Connect("mysql", "root:kunal@tcp(127.0.0.1:3306)/vitals")
+	db, err := sqlx.Connect("mysql", "root:Harshit445@tcp(127.0.0.1:3306)/vitals")
 	if err != nil {
 		panic(err)
 	}
@@ -45,6 +47,10 @@ func main() {
 	})
 
 	r := gin.Default()
+
+	r.StaticFile("/", "./vitals-front/dist/index.html")
+	r.StaticFS("/assets", http.Dir("./vitals-front/dist/assets"))
+
 	r.POST("/donator/register", func(ctx *gin.Context) {
 		Auth.DonatorReg(ctx, db)
 	})
@@ -75,16 +81,24 @@ func main() {
 		Requests.DonatorAcceptedGetRequests(ctx, db)
 	})
 
-	r.GET("/hospital/deleteRequest", func(ctx *gin.Context) {
+	r.GET("/hospital/remRequest", func(ctx *gin.Context) {
 		Requests.HospitalDeleteRequest(ctx, db)
 	})
 
-	r.GET("/donator/deleteRequest", func(ctx *gin.Context) {
+	r.GET("/donator/remRequest", func(ctx *gin.Context) {
 		Requests.DonatorDeleteRequest(ctx, db)
 	})
 
 	r.GET("/donator/acceptRequest", func(ctx *gin.Context) {
 		Requests.AcceptRequest(ctx, db)
+	})
+
+	r.GET("/donator/getCredits", func(ctx *gin.Context) {
+		Requests.GetCredits(ctx, db)
+	})
+
+	r.NoRoute(func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/")
 	})
 
 	r.Use(cors.New(cors.Config{

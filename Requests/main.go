@@ -6,10 +6,11 @@ import (
 	"Vitals/Notification"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 	"io"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 )
 
 type CreateReqBody struct {
@@ -280,6 +281,7 @@ func DonatorAllGetRequests(ctx *gin.Context, db *sqlx.DB) {
 	println(userId)
 	req, err := db.Queryx("SELECT * FROM requests WHERE acceptedBy IS NULL;")
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(500, gin.H{
 			"error": "Unable to fetch blood requests",
 		})
@@ -389,8 +391,9 @@ func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
 	tx := db.MustBegin()
 
 	var reqType int
-	err = tx.QueryRow(fmt.Sprintf("SELECT type FROM requests WHERE id = %s", reqId)).Scan(&reqType)
+	err = tx.QueryRow(fmt.Sprintf("SELECT type FROM requests WHERE id = %d", reqId)).Scan(&reqType)
 	if err != nil {
+		println(err.Error())
 		ctx.JSON(500, gin.H{
 			"error": "Unable to fetch requests data",
 		})
@@ -429,5 +432,36 @@ func AcceptRequest(ctx *gin.Context, db *sqlx.DB) {
 
 	ctx.JSON(200, gin.H{
 		"status": "success",
+	})
+}
+
+func GetCredits(ctx *gin.Context, db *sqlx.DB) {
+	token := ctx.Request.Header.Get("X-TOKEN")
+	if token == "" {
+		ctx.JSON(401, gin.H{
+			"error": "You need to be logged in to perform this action",
+		})
+		return
+	}
+	userId, err := Auth.DecodeUnsignedJWT(token)
+	if err != nil {
+		ctx.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	var credits int
+	err = db.QueryRow(fmt.Sprintf("SELECT credits FROM donator WHERE userId = %s", userId)).Scan(&credits)
+	if err != nil {
+		println(err.Error())
+		ctx.JSON(500, gin.H{
+			"error": "Unable to fetch requests data",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"credits": credits,
 	})
 }
