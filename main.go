@@ -97,8 +97,10 @@ func main() {
 		Requests.GetCredits(ctx, db)
 	})
 
+	r.LoadHTMLFiles("./vitals-front/dist/index.html")
 	r.NoRoute(func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/")
+		c.HTML(200, "index.html", gin.H{})
+		//c.Redirect(http.StatusFound, "/")
 	})
 
 	r.Use(cors.New(cors.Config{
